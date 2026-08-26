@@ -7,7 +7,7 @@ project directory opens (or re-attaches to) a 4-window session:
 |---|----------|------------------------|
 | 0 | `SHAPE`  | `claude --permission-mode auto` — plan/spec/grill |
 | 1 | `BUILD`  | `opencode` — implement tickets |
-| 2 | `REVIEW` | plain shell — inspect code, nothing auto-run |
+| 2 | `INSPECT` | plain shell — inspect code, nothing auto-run |
 | 3 | `SERVER` | `pnpm dev` |
 
 The session is named after the project directory (`.` → `_`). Running `amux` again in

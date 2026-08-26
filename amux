@@ -19,8 +19,8 @@ tmux new-window -t "$SESSION_NAME:1" -n 'BUILD'
 sleep 0.3
 tmux send-keys -t "$SESSION_NAME:1" "opencode" C-m
 
-# 2. Create Window 2 (Review: plain shell for inspecting code)
-tmux new-window -t "$SESSION_NAME:2" -n 'REVIEW'
+# 2. Create Window 2 (Inspect: plain shell for inspecting code)
+tmux new-window -t "$SESSION_NAME:2" -n 'INSPECT'
 
 # 3. Create Window 3 (Server: dev server)
 tmux new-window -t "$SESSION_NAME:3" -n 'SERVER'
