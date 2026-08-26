@@ -43,3 +43,11 @@ Declining with `n` (or Escape) leaves the workspace untouched.
   `package.json`'s `dev` script, fall back to an empty shell) is a possible future
   improvement, not yet implemented.
 - No project picker yet (unlike `smux-picker` for `smux`).
+- tmux only refreshes a *new* session's environment from whatever process first started
+  its server — a session created later on an already-running server (e.g. left over from
+  an earlier sandboxed tool invocation) silently inherits that frozen environment instead
+  of the current shell's. `amux` pins `HOME` explicitly to guard against this (it's what
+  breaks `claude`'s config lookup when stale), but doesn't pin the rest of the
+  environment, so a stale server could still leak other vars (e.g. `PATH`) into a new
+  workspace. If a launched tool behaves as if it's on a different machine, check for a
+  leftover `tmux` server with `tmux ls` and `tmux kill-server` it.
