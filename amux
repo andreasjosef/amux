@@ -10,7 +10,16 @@ if [ $? -eq 0 ]; then
 fi
 
 # 0. Create session with Window 0 (Shape: plan/grill with Claude, auto mode)
-tmux new-session -d -s "$SESSION_NAME" -n 'SHAPE'
+#
+# tmux's global environment is captured once, when its server process is born, from
+# whatever process first talked to that socket -- not refreshed per new-session call.
+# If a stale server is still running from an earlier sandboxed invocation (e.g. an
+# opencode HOME override), every session created here would silently inherit that
+# frozen HOME, so tools like claude would read config from the wrong home and replay
+# onboarding. Pin HOME explicitly so this session is correct regardless of server
+# history; set-environment propagates it to the windows created below too.
+tmux new-session -d -s "$SESSION_NAME" -n 'SHAPE' -e HOME="$HOME"
+tmux set-environment -t "$SESSION_NAME" HOME "$HOME"
 sleep 0.3
 tmux send-keys -t "$SESSION_NAME:0" "claude --permission-mode auto" C-m
 
