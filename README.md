@@ -30,6 +30,12 @@ cd ~/projects/some-project
 amux
 ```
 
+Pressing `M-.` (Alt-`.`) inside the session prompts `kill session <name>? (y/n)`.
+Confirming with `y` gracefully closes the workspace: it sends Ctrl-C to every
+window to let `claude`, `opencode`, and `pnpm dev` exit cleanly (releasing e.g. a
+dev-server port), waits ~1 second, then kills the session as a safety net.
+Declining with `n` (or Escape) leaves the workspace untouched.
+
 ## Known limitations
 
 - `SERVER` hardcodes `pnpm dev`. If a project has no `dev` script, that window's command

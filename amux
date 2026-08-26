@@ -27,6 +27,13 @@ tmux new-window -t "$SESSION_NAME:3" -n 'SERVER'
 sleep 0.3
 tmux send-keys -t "$SESSION_NAME:3" "pnpm dev" C-m
 
+# 4. Register M-. to gracefully close this workspace. Unprefixed (root table), the
+#    same way the M-j/M-k/M-l/M-; navigation keys are, and set by the script so it
+#    ships with the tool (no ~/.tmux.conf edit). Confirm-before names the session;
+#    declining leaves it untouched.
+tmux bind-key -n 'M-.' confirm-before -p "kill session $SESSION_NAME? (y/n)" \
+  "run-shell 'tmux send-keys -t ${SESSION_NAME}:0 C-c; tmux send-keys -t ${SESSION_NAME}:1 C-c; tmux send-keys -t ${SESSION_NAME}:2 C-c; tmux send-keys -t ${SESSION_NAME}:3 C-c; sleep 1; tmux kill-session -t ${SESSION_NAME}'"
+
 # Attach and focus SHAPE
 tmux select-window -t "$SESSION_NAME:0"
 tmux attach-session -t "$SESSION_NAME"
