@@ -1,0 +1,32 @@
+#!/bin/bash
+
+SESSION_NAME=$(basename "$PWD" | tr . _)
+
+# Check if session already exists
+tmux has-session -t "$SESSION_NAME" 2>/dev/null
+if [ $? -eq 0 ]; then
+    tmux attach-session -t "$SESSION_NAME"
+    exit 0
+fi
+
+# 0. Create session with Window 0 (Shape: plan/grill with Claude, auto mode)
+tmux new-session -d -s "$SESSION_NAME" -n 'SHAPE'
+sleep 0.3
+tmux send-keys -t "$SESSION_NAME:0" "claude --permission-mode auto" C-m
+
+# 1. Create Window 1 (Build: implement with opencode)
+tmux new-window -t "$SESSION_NAME:1" -n 'BUILD'
+sleep 0.3
+tmux send-keys -t "$SESSION_NAME:1" "opencode" C-m
+
+# 2. Create Window 2 (Review: plain shell for inspecting code)
+tmux new-window -t "$SESSION_NAME:2" -n 'REVIEW'
+
+# 3. Create Window 3 (Server: dev server)
+tmux new-window -t "$SESSION_NAME:3" -n 'SERVER'
+sleep 0.3
+tmux send-keys -t "$SESSION_NAME:3" "pnpm dev" C-m
+
+# Attach and focus SHAPE
+tmux select-window -t "$SESSION_NAME:0"
+tmux attach-session -t "$SESSION_NAME"
