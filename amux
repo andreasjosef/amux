@@ -43,13 +43,19 @@ tmux send-keys -t "$SESSION_NAME:3" "pnpm dev" C-m
 tmux bind-key -n 'M-.' confirm-before -p "kill session $SESSION_NAME? (y/n)" \
   "run-shell 'tmux send-keys -t ${SESSION_NAME}:0 C-c; tmux send-keys -t ${SESSION_NAME}:1 C-c; tmux send-keys -t ${SESSION_NAME}:2 C-c; tmux send-keys -t ${SESSION_NAME}:3 C-c; sleep 1; tmux kill-session -t ${SESSION_NAME}'"
 
-# 5. Register M-g to toggle lazygit in an on-demand LGIT window: from anywhere it jumps
-#    to LGIT (creating it in the current pane's directory if missing), from LGIT it goes
-#    back to the previous window. lazygit's `e` opens files in Inspect's Neovim (see the
-#    nvim config's bin/lazygit-edit), so Inspect <-> LGIT is one key each way. Quitting
-#    lazygit closes the window.
-tmux bind-key -n 'M-g' if-shell -F '#{==:#{window_name},LGIT}' 'last-window' \
-  "if-shell -F '#{W:#{?#{==:#{window_name},LGIT},1,}}' 'select-window -t :=LGIT' 'new-window -n LGIT -c \"#{pane_current_path}\" lazygit'"
+# 5. Register on-demand tool windows, each toggled by one key: from anywhere the key
+#    jumps to the window (creating it in the current pane's directory if missing), from
+#    the window it goes back to the previous one. Quitting the tool closes the window.
+bind_toggle() { # KEY NAME COMMAND...
+  local key=$1 name=$2; shift 2
+  tmux bind-key -n "$key" if-shell -F "#{==:#{window_name},$name}" 'last-window' \
+    "if-shell -F '#{W:#{?#{==:#{window_name},$name},1,}}' 'select-window -t :=$name' 'new-window -n $name -c \"#{pane_current_path}\" $*'"
+}
+#    M-g: lazygit. Its `e` opens files in Inspect's Neovim (see the nvim config's
+#    bin/lazygit-edit), so Inspect <-> LGIT is one key each way.
+bind_toggle 'M-g' LGIT lazygit
+#    M-p: gh-dash (`gh extension install dlvhdr/gh-dash`), the repo's PRs and issues.
+bind_toggle 'M-p' PRS gh dash
 
 # Attach and focus SHAPE
 tmux select-window -t "$SESSION_NAME:0"

@@ -42,6 +42,10 @@ from `LGIT` it jumps back to the window you came from. With the matching Neovim 
 lazygit's `e` opens the file in `INSPECT`'s Neovim and switches there, so reviewing is
 `M-g` → `e` → `M-g`. Quitting lazygit (`q`) closes the window.
 
+`M-p` does the same for [gh-dash](https://github.com/dlvhdr/gh-dash) in a `PRS` window:
+the repo's pull requests and issues, to view, check out, comment, approve, merge or close.
+Install it once with `gh extension install dlvhdr/gh-dash`.
+
 ## Known limitations
 
 - `SERVER` hardcodes `pnpm dev`. If a project has no `dev` script, that window's command
