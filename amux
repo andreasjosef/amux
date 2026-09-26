@@ -43,6 +43,14 @@ tmux send-keys -t "$SESSION_NAME:3" "pnpm dev" C-m
 tmux bind-key -n 'M-.' confirm-before -p "kill session $SESSION_NAME? (y/n)" \
   "run-shell 'tmux send-keys -t ${SESSION_NAME}:0 C-c; tmux send-keys -t ${SESSION_NAME}:1 C-c; tmux send-keys -t ${SESSION_NAME}:2 C-c; tmux send-keys -t ${SESSION_NAME}:3 C-c; sleep 1; tmux kill-session -t ${SESSION_NAME}'"
 
+# 5. Register M-g to toggle lazygit in an on-demand LGIT window: from anywhere it jumps
+#    to LGIT (creating it in the current pane's directory if missing), from LGIT it goes
+#    back to the previous window. lazygit's `e` opens files in Inspect's Neovim (see the
+#    nvim config's bin/lazygit-edit), so Inspect <-> LGIT is one key each way. Quitting
+#    lazygit closes the window.
+tmux bind-key -n 'M-g' if-shell -F '#{==:#{window_name},LGIT}' 'last-window' \
+  "if-shell -F '#{W:#{?#{==:#{window_name},LGIT},1,}}' 'select-window -t :=LGIT' 'new-window -n LGIT -c \"#{pane_current_path}\" lazygit'"
+
 # Attach and focus SHAPE
 tmux select-window -t "$SESSION_NAME:0"
 tmux attach-session -t "$SESSION_NAME"
