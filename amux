@@ -57,6 +57,19 @@ bind_toggle 'M-g' LGIT lazygit
 #    M-p: gh-dash (`gh extension install dlvhdr/gh-dash`), the repo's PRs and issues.
 bind_toggle 'M-p' PRS gh dash
 
+# 6. Pipeline status: prefix this session's status-right (keeping the global one after
+#    it) with the default branch's CI and deploy marks. M-c toggles the session between
+#    that and the current branch's marks. amux is symlinked into ~/.local/bin, so the
+#    helper script is found next to the real file.
+AMUX_DIR=$(dirname "$(readlink -f "$0")")
+tmux set-option -t "$SESSION_NAME" status-right \
+  "#($AMUX_DIR/amux-pipeline-status '$PWD' #{@pipeline-view})$(tmux show-options -gv status-right)"
+tmux set-option -t "$SESSION_NAME" status-right-length \
+  $(( $(tmux show-options -gv status-right-length) + 100 ))
+tmux bind-key -n 'M-c' if-shell -F '#{==:#{@pipeline-view},branch}' \
+  'set-option @pipeline-view default ; refresh-client -S' \
+  'set-option @pipeline-view branch ; refresh-client -S'
+
 # Attach and focus SHAPE
 tmux select-window -t "$SESSION_NAME:0"
 tmux attach-session -t "$SESSION_NAME"

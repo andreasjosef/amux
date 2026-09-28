@@ -39,3 +39,10 @@ _Avoid_: Review
 
 **Server**:
 The runner that keeps the project's dev server running.
+
+### Status line
+
+**Pipeline status**:
+The status-line summary of one commit's CI checks and deploys, as GitHub records them:
+the default branch's head by default, the current branch's head when toggled.
+_Avoid_: Build status (Build is a workflow window), CI status (it covers deploys too)

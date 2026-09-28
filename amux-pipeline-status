@@ -1,0 +1,84 @@
+#!/bin/bash
+# Pipeline status: a tmux status-line segment summarising the CI checks and deploys
+# GitHub has recorded for one commit -- the default branch's head, or the current
+# branch's pushed head. amux runs it from `status-right` as
+#
+#   amux-pipeline-status <repo-dir> [default|branch]
+#
+# CI is every GitHub check run on the commit (the latest attempt of each, skipped
+# ones ignored) folded into one worst-of mark. Deploys are the commit statuses that
+# services like Vercel and Railway post back, one mark each.
+#
+# tmux may call this every few seconds, so both views are fetched together and cached
+# for $TTL seconds: toggling between them is instant and polling stays ~4 API calls
+# per $TTL. Prints nothing for a repo without a GitHub remote.
+set -u
+repo=${1:-.}
+view=${2:-default}; [[ $view == branch ]] || view=default
+TTL=30
+cache="${TMPDIR:-/tmp}/amux-pipeline-status-$(printf %s "$repo" | md5sum | cut -c1-8)"
+
+if [[ -f $cache.$view ]] && (( $(date +%s) - $(stat -c %Y "$cache.$view") < TTL )); then
+  cat "$cache.$view"; exit 0
+fi
+
+cd "$repo" 2>/dev/null || exit 0
+[[ $(git remote get-url origin 2>/dev/null) == *github.com* ]] || exit 0
+command -v gh >/dev/null || exit 0
+
+# Gruvbox, matching the rest of the status line.
+GREEN='#[fg=#b8bb26]' RED='#[fg=#fb4934]' YELLOW='#[fg=#fabd2f]' GRAY='#[fg=#928374]'
+LABEL='#[fg=#83a598,bold]' PLAIN='#[nobold]'
+
+# Check names are shortened by dropping the service prefix ("Vercel – ") and the repo
+# name ("weeklydrip-app" -> "app").
+prefix="$(basename "$(git rev-parse --show-toplevel)")-"
+
+# One line per mark: "<state>\t<name>", state in success|pending|failure.
+states() {
+  local sha=$1
+  gh api "repos/{owner}/{repo}/commits/$sha/check-runs?per_page=100" --jq '
+    .check_runs | group_by(.name) | map(max_by(.id))
+    | map(select(.conclusion != "skipped" and .conclusion != "neutral"))
+    | if length == 0 then empty
+      elif any(.status != "completed") then "pending\tCI"
+      elif any(.conclusion != "success") then "failure\tCI"
+      else "success\tCI" end' 2>/dev/null || return 1
+  gh api "repos/{owner}/{repo}/commits/$sha/status" --jq '
+    .statuses[] | "\(if .state == "error" then "failure" else .state end)\t\(.context)"' 2>/dev/null
+}
+
+# render LABEL BRANCH: the label followed by the marks for the branch's pushed head.
+render() {
+  local label=$1 branch=$2 sha lines out="" state name
+  sha=$(git ls-remote origin "refs/heads/$branch" 2>/dev/null | cut -f1)
+  if [[ -z $sha ]]; then printf '%s%s%s%s unpushed' "$LABEL" "$label" "$PLAIN" "$GRAY"; return; fi
+  lines=$(states "$sha") || { printf '%s%s%s%s ?' "$LABEL" "$label" "$PLAIN" "$GRAY"; return; }
+  while IFS=$'\t' read -r state name; do
+    [[ -z $state ]] && continue
+    name=${name##* – }; name=${name##* - }; name=${name#"$prefix"}
+    case $state in
+      success) out+="  ${GREEN}✓ ${GRAY}$name" ;;
+      pending) out+="  ${YELLOW}⟳ ${GRAY}$name" ;;
+      *)       out+="  ${RED}✗ ${GRAY}$name" ;;
+    esac
+  done <<< "$lines"
+  printf '%s%s%s%s%s' "$LABEL" "$label" "$PLAIN" "$GRAY" "${out:- –}"
+}
+
+default=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null); default=${default#origin/}
+default=${default:-main}
+branch=$(git branch --show-current)
+
+printf '%s ' "$(render "$default" "$default")" > "$cache.default"
+if [[ -z $branch || $branch == "$default" ]]; then
+  cp "$cache.default" "$cache.branch"
+else
+  # Ticket-style branches (wkd-31-…) shorten to the ticket id, others to 20 chars.
+  if [[ $branch =~ ^([a-z]+-[0-9]+) ]]; then short=${BASH_REMATCH[1]}
+  elif (( ${#branch} > 20 )); then short="${branch:0:19}…"
+  else short=$branch; fi
+  printf '%s ' "$(render "$short" "$branch")" > "$cache.branch"
+fi
+
+cat "$cache.$view"
