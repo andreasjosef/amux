@@ -40,7 +40,7 @@ else
     # 1. Create Window 1 (Nvim: edit and browse code)
     tmux new-window -t "$SESSION_NAME:1" -n 'NVIM'
     sleep 0.3
-    tmux send-keys -t "$SESSION_NAME:1" "nvim" C-m
+    tmux send-keys -t "$SESSION_NAME:1" "nvim ." C-m
 
     # 2. Create Window 2 (Term: plain shell)
     tmux new-window -t "$SESSION_NAME:2" -n 'TERM'

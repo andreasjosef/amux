@@ -6,7 +6,7 @@ project directory opens (or re-attaches to) a 4-window session:
 | # | Window   | Auto-launches         |
 |---|----------|------------------------|
 | 0 | `CLAUDE` | `claude --permission-mode auto` |
-| 1 | `NVIM`   | `nvim` |
+| 1 | `NVIM`   | `nvim .` — opens in netrw |
 | 2 | `TERM`   | plain shell |
 | 3 | `SERVER` | `pnpm dev` |
 | 4 | `LGIT`   | `lazygit` |
