@@ -2,6 +2,11 @@
 
 SESSION_NAME=$(basename "$PWD" | tr . _)
 
+# Layout: `amux` opens CLAUDE/NVIM/TERM/SERVER; `amux old` opens the original
+# SHAPE/BUILD/INSPECT/SERVER layout.
+LAYOUT=${1:-new}
+if [ "$LAYOUT" = old ]; then W0=SHAPE; else W0=CLAUDE; fi
+
 # Check if session already exists
 tmux has-session -t "$SESSION_NAME" 2>/dev/null
 if [ $? -eq 0 ]; then
@@ -9,7 +14,7 @@ if [ $? -eq 0 ]; then
     exit 0
 fi
 
-# 0. Create session with Window 0 (Shape: plan/grill with Claude, auto mode)
+# 0. Create session with Window 0 (Claude, auto mode; SHAPE in the old layout)
 #
 # tmux's global environment is captured once, when its server process is born, from
 # whatever process first talked to that socket -- not refreshed per new-session call.
@@ -18,18 +23,28 @@ fi
 # frozen HOME, so tools like claude would read config from the wrong home and replay
 # onboarding. Pin HOME explicitly so this session is correct regardless of server
 # history; set-environment propagates it to the windows created below too.
-tmux new-session -d -s "$SESSION_NAME" -n 'SHAPE' -e HOME="$HOME"
+tmux new-session -d -s "$SESSION_NAME" -n "$W0" -e HOME="$HOME"
 tmux set-environment -t "$SESSION_NAME" HOME "$HOME"
 sleep 0.3
 tmux send-keys -t "$SESSION_NAME:0" "claude --permission-mode auto" C-m
 
-# 1. Create Window 1 (Build: implement with opencode)
-tmux new-window -t "$SESSION_NAME:1" -n 'BUILD'
-sleep 0.3
-tmux send-keys -t "$SESSION_NAME:1" "opencode" C-m
+if [ "$LAYOUT" = old ]; then
+    # 1. Create Window 1 (Build: implement with opencode)
+    tmux new-window -t "$SESSION_NAME:1" -n 'BUILD'
+    sleep 0.3
+    tmux send-keys -t "$SESSION_NAME:1" "opencode" C-m
 
-# 2. Create Window 2 (Inspect: plain shell for inspecting code)
-tmux new-window -t "$SESSION_NAME:2" -n 'INSPECT'
+    # 2. Create Window 2 (Inspect: plain shell for inspecting code)
+    tmux new-window -t "$SESSION_NAME:2" -n 'INSPECT'
+else
+    # 1. Create Window 1 (Nvim: edit and browse code)
+    tmux new-window -t "$SESSION_NAME:1" -n 'NVIM'
+    sleep 0.3
+    tmux send-keys -t "$SESSION_NAME:1" "nvim" C-m
+
+    # 2. Create Window 2 (Term: plain shell)
+    tmux new-window -t "$SESSION_NAME:2" -n 'TERM'
+fi
 
 # 3. Create Window 3 (Server: dev server)
 tmux new-window -t "$SESSION_NAME:3" -n 'SERVER'
@@ -70,6 +85,6 @@ tmux bind-key -n 'M-c' if-shell -F '#{==:#{@pipeline-view},branch}' \
   'set-option @pipeline-view default ; refresh-client -S' \
   'set-option @pipeline-view branch ; refresh-client -S'
 
-# Attach and focus SHAPE
+# Attach and focus window 0
 tmux select-window -t "$SESSION_NAME:0"
 tmux attach-session -t "$SESSION_NAME"

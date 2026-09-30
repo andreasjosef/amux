@@ -23,7 +23,22 @@ A window dedicated to a long-running background process that supports the workfl
 isn't itself a step in it.
 _Avoid_: Infra window, Utility window
 
-### Workflow windows
+**Layout**:
+The set of workflow windows a Workspace opens with. `amux` opens the default Layout;
+`amux old` opens the Old layout.
+
+### Workflow windows (default Layout)
+
+**Claude**:
+The workflow window running Claude Code, where work is planned and implemented.
+
+**Nvim**:
+The workflow window running Neovim, for editing and browsing code.
+
+**Term**:
+The workflow window with a plain shell, nothing run automatically.
+
+### Workflow windows (Old layout)
 
 **Shape**:
 The workflow window for planning and specifying work before it's built.
@@ -38,7 +53,7 @@ _Avoid_: Review
 ### Runners
 
 **Server**:
-The runner that keeps the project's dev server running.
+The runner that keeps the project's dev server running. Present in both Layouts.
 
 ### Status line
 
