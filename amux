@@ -66,9 +66,9 @@ bind_toggle() { # KEY NAME COMMAND...
   tmux bind-key -n "$key" if-shell -F "#{==:#{window_name},$name}" 'last-window' \
     "if-shell -F '#{W:#{?#{==:#{window_name},$name},1,}}' 'select-window -t :=$name' 'new-window -n $name -c \"#{pane_current_path}\" $*'"
 }
-#    M-g: lazygit. Its `e` opens files in Inspect's Neovim (see the nvim config's
+#    M-o: lazygit. Its `e` opens files in Inspect's Neovim (see the nvim config's
 #    bin/lazygit-edit), so Inspect <-> LGIT is one key each way.
-bind_toggle 'M-g' LGIT lazygit
+bind_toggle 'M-o' LGIT lazygit
 #    M-p: gh-dash (`gh extension install dlvhdr/gh-dash`), the repo's PRs and issues.
 bind_toggle 'M-p' PRS gh dash
 

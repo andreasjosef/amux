@@ -45,11 +45,11 @@ window to let `claude`, `opencode`, and `pnpm dev` exit cleanly (releasing e.g. 
 dev-server port), waits ~1 second, then kills the session as a safety net.
 Declining with `n` (or Escape) leaves the workspace untouched.
 
-Pressing `M-g` (Alt-`g`) toggles lazygit in an on-demand `LGIT` window. From any window
+Pressing `M-o` (Alt-`o`) toggles lazygit in an on-demand `LGIT` window. From any window
 it jumps to `LGIT`, opening it (in the current pane's directory) if it isn't there yet;
 from `LGIT` it jumps back to the window you came from. With the matching Neovim setup,
 lazygit's `e` opens the file in `INSPECT`'s Neovim and switches there, so reviewing is
-`M-g` → `e` → `M-g`. Quitting lazygit (`q`) closes the window.
+`M-o` → `e` → `M-o`. Quitting lazygit (`q`) closes the window.
 
 `M-p` does the same for [gh-dash](https://github.com/dlvhdr/gh-dash) in a `PRS` window:
 the repo's pull requests and issues, to view, check out, comment, approve, merge or close.
