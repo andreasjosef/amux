@@ -9,6 +9,8 @@ project directory opens (or re-attaches to) a 4-window session:
 | 1 | `NVIM`   | `nvim` |
 | 2 | `TERM`   | plain shell |
 | 3 | `SERVER` | `pnpm dev` |
+| 4 | `LGIT`   | `lazygit` |
+| 4 | `LGIT`   | `lazygit` |
 
 `amux old` opens the original layout instead:
 
@@ -18,6 +20,7 @@ project directory opens (or re-attaches to) a 4-window session:
 | 1 | `BUILD`  | `opencode` — implement tickets |
 | 2 | `INSPECT` | plain shell — inspect code, nothing auto-run |
 | 3 | `SERVER` | `pnpm dev` |
+| 4 | `LGIT`   | `lazygit` |
 
 The session is named after the project directory (`.` → `_`). Running `amux` again in
 the same project attaches to the existing session instead of rebuilding it.
@@ -45,11 +48,14 @@ window to let `claude`, `opencode`, and `pnpm dev` exit cleanly (releasing e.g. 
 dev-server port), waits ~1 second, then kills the session as a safety net.
 Declining with `n` (or Escape) leaves the workspace untouched.
 
-Pressing `M-o` (Alt-`o`) toggles lazygit in an on-demand `LGIT` window. From any window
-it jumps to `LGIT`, opening it (in the current pane's directory) if it isn't there yet;
-from `LGIT` it jumps back to the window you came from. With the matching Neovim setup,
-lazygit's `e` opens the file in `INSPECT`'s Neovim and switches there, so reviewing is
-`M-o` → `e` → `M-o`. Quitting lazygit (`q`) closes the window.
+Pressing `M-o` (Alt-`o`) toggles the `LGIT` window: from any window it jumps to
+`LGIT`, from `LGIT` it jumps back to the window you came from. If you quit lazygit (`q`),
+the window closes and the next `M-o` reopens it in the current pane's directory. With the
+matching Neovim setup, lazygit's `e` opens the file in Neovim and switches there, so
+reviewing is `M-o` → `e` → `M-o`.
+
+`M-s` (Alt-`s`) toggles the `SERVER` window the same way, restarting `pnpm dev` in a new
+window if it was closed.
 
 `M-p` does the same for [gh-dash](https://github.com/dlvhdr/gh-dash) in a `PRS` window:
 the repo's pull requests and issues, to view, check out, comment, approve, merge or close.
