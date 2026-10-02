@@ -5,7 +5,11 @@ SESSION_NAME=$(basename "$PWD" | tr . _)
 # Layout: `amux` opens CLAUDE/NVIM/TERM/SERVER; `amux old` opens the original
 # SHAPE/BUILD/INSPECT/SERVER layout.
 LAYOUT=${1:-new}
-if [ "$LAYOUT" = old ]; then W0=SHAPE; else W0=CLAUDE; fi
+if [ "$LAYOUT" = old ]; then W0=SHAPE W1=BUILD W2=INSPECT; else W0=CLAUDE W1=NVIM W2=TERM; fi
+
+# Windows are addressed by name (`session:=NAME`) and created without an index, so the
+# layout works whatever the user's tmux base-index is (0 or 1).
+win() { echo "$SESSION_NAME:=$1"; }
 
 # Check if session already exists
 tmux has-session -t "$SESSION_NAME" 2>/dev/null
@@ -14,7 +18,7 @@ if [ $? -eq 0 ]; then
     exit 0
 fi
 
-# 0. Create session with Window 0 (Claude, auto mode; SHAPE in the old layout)
+# 0. Create session with the first window (Claude, auto mode; SHAPE in the old layout)
 #
 # tmux's global environment is captured once, when its server process is born, from
 # whatever process first talked to that socket -- not refreshed per new-session call.
@@ -26,42 +30,42 @@ fi
 tmux new-session -d -s "$SESSION_NAME" -n "$W0" -e HOME="$HOME"
 tmux set-environment -t "$SESSION_NAME" HOME "$HOME"
 sleep 0.3
-tmux send-keys -t "$SESSION_NAME:0" "claude --permission-mode auto" C-m
+tmux send-keys -t "$(win "$W0")" "claude --permission-mode auto" C-m
 
 if [ "$LAYOUT" = old ]; then
-    # 1. Create Window 1 (Build: implement with opencode)
-    tmux new-window -t "$SESSION_NAME:1" -n 'BUILD'
+    # 1. Create Build (implement with opencode)
+    tmux new-window -t "$SESSION_NAME:" -n 'BUILD'
     sleep 0.3
-    tmux send-keys -t "$SESSION_NAME:1" "opencode" C-m
+    tmux send-keys -t "$(win BUILD)" "opencode" C-m
 
-    # 2. Create Window 2 (Inspect: plain shell for inspecting code)
-    tmux new-window -t "$SESSION_NAME:2" -n 'INSPECT'
+    # 2. Create Inspect (plain shell for inspecting code)
+    tmux new-window -t "$SESSION_NAME:" -n 'INSPECT'
 else
-    # 1. Create Window 1 (Nvim: edit and browse code)
-    tmux new-window -t "$SESSION_NAME:1" -n 'NVIM'
+    # 1. Create Nvim (edit and browse code)
+    tmux new-window -t "$SESSION_NAME:" -n 'NVIM'
     sleep 0.3
-    tmux send-keys -t "$SESSION_NAME:1" "nvim ." C-m
+    tmux send-keys -t "$(win NVIM)" "nvim ." C-m
 
-    # 2. Create Window 2 (Term: plain shell)
-    tmux new-window -t "$SESSION_NAME:2" -n 'TERM'
+    # 2. Create Term (plain shell)
+    tmux new-window -t "$SESSION_NAME:" -n 'TERM'
 fi
 
-# 3. Create Window 3 (Server: dev server)
-tmux new-window -t "$SESSION_NAME:3" -n 'SERVER'
+# 3. Create Server (dev server)
+tmux new-window -t "$SESSION_NAME:" -n 'SERVER'
 sleep 0.3
-tmux send-keys -t "$SESSION_NAME:3" "pnpm dev" C-m
+tmux send-keys -t "$(win SERVER)" "pnpm dev" C-m
 
-# 4. Create Window 4 (LGIT: lazygit, open from the start; M-o toggles to it below)
-tmux new-window -t "$SESSION_NAME:4" -n 'LGIT'
+# 4. Create LGIT (lazygit, open from the start; M-o toggles to it below)
+tmux new-window -t "$SESSION_NAME:" -n 'LGIT'
 sleep 0.3
-tmux send-keys -t "$SESSION_NAME:4" "lazygit" C-m
+tmux send-keys -t "$(win LGIT)" "lazygit" C-m
 
 # 5. Register M-. to gracefully close this workspace. Unprefixed (root table), the
 #    same way the M-j/M-k/M-l navigation keys are, and set by the script so it
 #    ships with the tool (no ~/.tmux.conf edit). Confirm-before names the session;
 #    declining leaves it untouched.
 tmux bind-key -n 'M-.' confirm-before -p "kill session $SESSION_NAME? (y/n)" \
-  "run-shell 'tmux send-keys -t ${SESSION_NAME}:0 C-c; tmux send-keys -t ${SESSION_NAME}:1 C-c; tmux send-keys -t ${SESSION_NAME}:2 C-c; tmux send-keys -t ${SESSION_NAME}:3 C-c; sleep 1; tmux kill-session -t ${SESSION_NAME}'"
+  "run-shell 'tmux send-keys -t $(win "$W0") C-c; tmux send-keys -t $(win "$W1") C-c; tmux send-keys -t $(win "$W2") C-c; tmux send-keys -t $(win SERVER) C-c; sleep 1; tmux kill-session -t ${SESSION_NAME}'"
 
 # 6. Register tool windows, each toggled by one key: from anywhere the key jumps to the
 #    window (creating it in the current pane's directory if missing), from the window it
@@ -71,9 +75,9 @@ bind_toggle() { # KEY NAME COMMAND...
   tmux bind-key -n "$key" if-shell -F "#{==:#{window_name},$name}" 'last-window' \
     "if-shell -F '#{W:#{?#{==:#{window_name},$name},1,}}' 'select-window -t :=$name' 'new-window -n $name -c \"#{pane_current_path}\" $*'"
 }
-#    M-s: the dev server (window 3).
+#    M-s: the dev server (SERVER).
 bind_toggle 'M-s' SERVER pnpm dev
-#    M-o: lazygit (window 4). Its `e` opens files in Neovim (see the nvim config's
+#    M-o: lazygit (LGIT). Its `e` opens files in Neovim (see the nvim config's
 #    bin/lazygit-edit), so Neovim <-> LGIT is one key each way.
 bind_toggle 'M-o' LGIT lazygit
 #    M-p: gh-dash (`gh extension install dlvhdr/gh-dash`), the repo's PRs and issues.
@@ -92,6 +96,6 @@ tmux bind-key -n 'M-c' if-shell -F '#{==:#{@pipeline-view},branch}' \
   'set-option @pipeline-view default ; refresh-client -S' \
   'set-option @pipeline-view branch ; refresh-client -S'
 
-# Attach and focus window 0
-tmux select-window -t "$SESSION_NAME:0"
+# Attach and focus the first window
+tmux select-window -t "$(win "$W0")"
 tmux attach-session -t "$SESSION_NAME"
